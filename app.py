@@ -40,20 +40,20 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Load model and scaler
+import os
+model_path = os.path.join(os.path.dirname(__file__), "final_xgboost_model.pkl")
+scaler_path = os.path.join(os.path.dirname(__file__), "final_scaler.pkl")
+feature_path = os.path.join(os.path.dirname(__file__), "final_feature_names.pkl")
+
 try:
-    model = joblib.load("final_xgboost_model.pkl")
-    scaler = joblib.load("final_scaler.pkl")
-    feature_names = joblib.load("final_feature_names.pkl")
+    model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
+    feature_names = joblib.load(feature_path)
     print("✓ Using Final XGBoost Model (85.37% accuracy) - final_xgboost_model.pkl")
-except:
-    try:
-        model = joblib.load("improved_loan_model_with_age.pkl")
-        scaler = joblib.load("scaler_with_age.pkl")
-        feature_names = joblib.load("feature_names.pkl")
-        print("Using improved model with Age feature (84.55% accuracy)")
-    except:
-        model = joblib.load("tuned_loan_model.pkl")
-        print("Using tuned model (tuned_loan_model.pkl)")
+except FileNotFoundError as e:
+    print(f"⚠️ Model file not found: {e}")
+    print("Model files must be present for deployment")
+    raise
 
 # Database Models
 class User(UserMixin, db.Model):
