@@ -39,6 +39,14 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Initialize database on app startup
+with app.app_context():
+    try:
+        db.create_all()
+        print("✓ Database tables created/verified")
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+
 # Load model and scaler
 import os
 model_path = os.path.join(os.path.dirname(__file__), "final_xgboost_model.pkl")
