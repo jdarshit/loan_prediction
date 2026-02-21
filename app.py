@@ -33,6 +33,7 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///loan_predictions.db'
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
