@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .navbar {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .navbar a {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .navbar a:hover {
+            background: #764ba2;
+        }
+        .navbar a.active {
+            background: #764ba2;
+            font-weight: bold;
+        }
+        .navbar .user-info {
+            margin-left: auto;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        .navbar a.logout-btn {
+            background: #e74c3c;
+            margin-left: 10px;
+        }
+        .navbar a.logout-btn:hover {
+            background: #c0392b;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .filters a {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            text-decoration: none;
+            border-radius: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+        .filters a.active {
+            background: #667eea;
+            color: white;
+        }
+        .prediction-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .prediction-result {
+            font-size: 18px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .prediction-confidence {
+            font-size: 14px;
+            color: #666;
+        }
+        .prediction-date {
+            font-size: 12px;
+            color: #999;
+        }
+        .prediction-actions {
+            margin-top: 10px;
+        }
+        .prediction-actions a {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .prediction-actions a:hover {
+            background: #764ba2;
+        }
+        .prediction-details {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .detail-chip {
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #555;
+        }
+        .pagination {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .pagination a {
+            display: inline-block;
+            padding: 8px 12px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .pagination a:hover {
+            background: #f0f0f0;
+        }
+        .empty-message {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+{%- macro fv(data, key) -%}{%- set v = data.get(key) -%}{%- if v is string -%}{{ v }}{%- elif v -%}{{ v[0] }}{%- endif -%}{%- endmacro -%}
+<div class="container">
+        <div class="navbar">
+            <a href="{{ url_for('index') }}">🏠 Single Prediction</a>
+            <a href="{{ url_for('batch_predict') }}">📤 Batch Upload</a>
+            <a href="{{ url_for('history') }}" class="active">📊 History</a>
+            <a href="{{ url_for('metrics') }}">📈 Metrics</a>
+            <div class="user-info">👤 {{ current_user.username }}</div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+        </div>
+        
+        <h1>Prediction History</h1>
+        
+        <div class="filters">
+            <a href="{{ url_for('history') }}" {% if not search %}class="active"{% endif %}>All</a>
+            <a href="{{ url_for('history', search='approved') }}" {% if search == 'approved' %}class="active"{% endif %}>Approved</a>
+            <a href="{{ url_for('history', search='rejected') }}" {% if search == 'rejected' %}class="active"{% endif %}>Rejected</a>
+        </div>
+        
+        {% if predictions.items %}
+            {% for pred in predictions.items %}
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <div>
+                        <div class="prediction-result {% if pred.prediction_result == 'Approved' %}approved{% else %}rejected{% endif %}">
+                            {{ pred.prediction_result }}
+                        </div>
+                        <div class="prediction-confidence">
+                            Confidence: {{ pred.confidence }}%
+                        </div>
+                        <div class="prediction-date">
+                            {{ pred.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="prediction-actions">
+                    <a href="{{ url_for('download_report', pred_id=pred.id) }}">📄 Download PDF</a>
+                    <form method="POST" action="{{ url_for('delete_prediction', pred_id=pred.id) }}" style="display:inline;" onsubmit="return confirm('Delete this prediction?')">
+                        <button type="submit" style="padding:6px 12px;background:#e74c3c;color:white;border:none;border-radius:5px;font-size:12px;cursor:pointer;">🗑️ Delete</button>
+                    </form>
+                </div>
+                {% if pred.input_data %}
+                <div class="prediction-details">
+                    {% if pred.input_data.get('ApplicantIncome') %}<span class="detail-chip">💰 Income: {{ fv(pred.input_data, 'ApplicantIncome') }}</span>{% endif %}
+                    {% if pred.input_data.get('LoanAmount') %}<span class="detail-chip">🏦 Loan: {{ fv(pred.input_data, 'LoanAmount') }}K</span>{% endif %}
+                    {% if pred.input_data.get('Age') %}<span class="detail-chip">👤 Age: {{ fv(pred.input_data, 'Age') }}</span>{% endif %}
+                    {% if pred.input_data.get('Education') %}<span class="detail-chip">🎓 {{ fv(pred.input_data, 'Education') }}</span>{% endif %}
+                    {% if pred.input_data.get('Credit_History') %}<span class="detail-chip">⭐ Credit: {{ fv(pred.input_data, 'Credit_History') }}</span>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="pagination">
+                {% if predictions.has_prev %}
+                    <a href="{{ url_for('history', page=predictions.prev_num, search=search) }}">Previous</a>
+                {% endif %}
+                
+                <span>Page {{ predictions.page }} of {{ predictions.pages }}</span>
+                
+                {% if predictions.has_next %}
+                    <a href="{{ url_for('history', page=predictions.next_num, search=search) }}">Next</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="empty-message">
+                <p>No predictions found</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
