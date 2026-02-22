@@ -82,17 +82,21 @@ class Prediction(db.Model):
     approved_prob = db.Column(db.Float)
     rejected_prob = db.Column(db.Float)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
-
-# Initialize database AFTER models are defined
-with app.app_context():
+# Initialize database tables
+def init_db():
+    """Initialize database tables"""
     try:
         db.create_all()
         print("✓ Database tables created/verified")
     except Exception as e:
-        print(f"Database initialization warning: {e}")
+        print(f"Database init warning: {e}")
+
+# Call init_db on app startup
+init_db()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
 
 def preprocess_input(data_dict):
     """Preprocess input data with engineered features for XGBoost"""
