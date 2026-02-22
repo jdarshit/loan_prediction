@@ -82,17 +82,10 @@ class Prediction(db.Model):
     approved_prob = db.Column(db.Float)
     rejected_prob = db.Column(db.Float)
 
-# Initialize database tables
-def init_db():
-    """Initialize database tables"""
-    try:
-        db.create_all()
-        print("✓ Database tables created/verified")
-    except Exception as e:
-        print(f"Database init warning: {e}")
-
-# Call init_db on app startup
-init_db()
+# Initialize database tables safely
+with app.app_context():
+    db.create_all()
+    print("✓ Database tables created/verified")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -638,8 +631,6 @@ def api_history():
     })
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     # Production: debug=False, Development: debug=True
     debug_mode = os.getenv('FLASK_ENV') == 'development'
     app.run(debug=debug_mode, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
